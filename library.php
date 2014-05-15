@@ -69,6 +69,7 @@ function field_type_google_maps__install($module_id)
 
   // lastly, add our hook to include the Google Maps library
   ft_register_hook("template", "field_type_google_maps", "head_bottom", "", "ftgp_include_google_maps");
+  ft_register_hook("template", "field_type_google_maps", "standalone_form_fields_head_bottom", "", "ftgp_include_standalone_google_maps");
 
   return array(true, "");
 }
@@ -151,6 +152,11 @@ function field_type_google_maps__upgrade($old_version, $new_version)
       WHERE  field_type_identifier = 'google_maps_field'
     ");
   }
+
+  if ($old_version_info["release_date"] < 20110820)
+  {
+    ft_register_hook("template", "field_type_google_maps", "standalone_head_bottom", "", "ftgp_include_standalone_google_maps", 50, true);
+  }
 }
 
 function ftgp_include_google_maps($template, $page_data)
@@ -179,4 +185,19 @@ function ftgp_include_google_maps($template, $page_data)
 
   if ($has_google_map_field)
     echo "<script src=\"http://maps.google.com/maps/api/js?sensor=false\"></script>\n";
+}
+
+
+/**
+ * Added for compatibility with the Form Builder module and any future module that needs to display Form Tools
+ * fields outside of the core Form Tools pages. It blithely include the Google Maps API call for use by whatever
+ * page is calling it. This is as loosely coupled as it gets.
+ *
+ * @param string $template
+ * @param array $page_data
+ */
+function ftgp_include_standalone_google_maps($template, $page_data)
+{
+  global $g_root_url;
+  echo "<script src=\"http://maps.google.com/maps/api/js?sensor=false\"></script>\n";
 }
