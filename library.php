@@ -135,6 +135,15 @@ function field_type_google_maps__upgrade($old_version, $new_version)
       WHERE  field_type_identifier = 'google_maps_field'
     ");
   }
+
+  if ($old_version_info["release_date"] < 20110809)
+  {
+    mysql_query("
+      UPDATE {$g_table_prefix}field_types
+      SET    resources_js = '$(function() {\r\n  var maps = {}; \r\n\r\n  // load any maps in the page, defaulted to whatever address was saved\r\n  $(\".cf_gmf_section\").each(function() {\r\n    var gmf_id = $(this).attr(\"id\");\r\n    var field_name = $(this).find(\".cf_gmf_address\").attr(\"name\");\r\n    if (typeof google == \"undefined\") {\r\n      $(\"#cf_gmf_\" + field_name + \"_map\").after(\"<div class=\\\\\"hint\\\\\">Google Maps is currently not available. This is usually due to no internet connection.</div>\");\r\n      $(\"#cf_gmf_\" + field_name + \"_map\").remove();\r\n      $(this).find(\".cf_gmf_update\").hide();\r\n      return;\r\n    }\r\n    var defaults = {\r\n      zoom: 3,\r\n      center: new google.maps.LatLng(42.258881, -100.195313),\r\n      mapTypeId: google.maps.MapTypeId.ROADMAP,\r\n      streetViewControl: false,\r\n      mapTypeControl: false\r\n    } \r\n    var data = $(this).find(\".cf_gmf_data\").val();\r\n    var opts = defaults;\r\n    if (data != \"\") {\r\n      var parts = data.split(\"|\");\r\n      if (parts.length == 3) {\r\n        var lat_lng = parts[1].split(\", \");\r\n        opts.zoom = parseInt(parts[2], 10);\r\n        opts.center = new google.maps.LatLng(parseFloat(lat_lng[0]), parseFloat(lat_lng[1]));\r\n      }\r\n    }\r\n    maps[gmf_id] = new google.maps.Map($(this).find(\".cf_gmf\")[0], opts);\r\n\r\n    google.maps.event.addListener(maps[gmf_id], ''zoom_changed'', function() {\r\n      $(\"#\" + gmf_id).find(\"[name=\" + field_name + \"_zoom]\").val(maps[gmf_id].getZoom());\r\n    });\r\n  });\r\n\r\n  // out event handlers\r\n  $(\".cf_gmf_update\").bind(\"click\", update_map);\r\n\r\n  function update_map(e) {\r\n    var gmf_div = $(e.target).closest(\".cf_gmf_section\");\r\n    var field_name = gmf_div.find(\".cf_gmf_address\").attr(\"name\");\r\n    var map     = maps[gmf_div.attr(\"id\")];\r\n    var address = gmf_div.find(\".cf_gmf_address\").val();\r\n    var geocoder = new google.maps.Geocoder();\r\n    geocoder.geocode({ ''address'': address }, function(results, status) {\r\n      if (status == google.maps.GeocoderStatus.OK) {\r\n        var loc = results[0].geometry.location;\r\n        map.setCenter(loc);\r\n        var coords = loc.lat() + \", \" + loc.lng();\r\n        $(gmf_div).find(\"[name=\" + field_name + \"_coords]\").val(coords);\r\n        $(gmf_div).find(\"[name=\" + field_name + \"_zoom]\").val(map.getZoom());\r\n        $(\".cf_gmf_coords_str\").html(coords);\r\n      }\r\n    });\r\n  }\r\n});'
+      WHERE  field_type_identifier = 'google_maps_field'
+    ");
+  }
 }
 
 function ftgp_include_google_maps($template, $page_data)
