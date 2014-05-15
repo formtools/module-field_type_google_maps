@@ -43,6 +43,13 @@ function field_type_google_maps__install($module_id)
   ");
   $field_type_id = mysql_insert_id();
 
+  mysql_query("
+    INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+      custom_function, custom_function_required, default_error_message, list_order)
+    VALUES ($field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
+      '{\$LANG.validation_default_rule_required}', 1)
+  ");
+
   // map size setting
   mysql_query("INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type, field_orientation, default_value_type, default_value, list_order) VALUES ($field_type_id, 'Map Size', 'map_size', 'select', 'na', 'static', 'cf_gmf_small', 1)");
   $setting_id = mysql_insert_id();
@@ -96,6 +103,20 @@ function field_type_google_maps__uninstall($module_id)
     mysql_query("DELETE FROM {$g_table_prefix}field_type_setting_options WHERE setting_id IN ($setting_id_str)");
     mysql_query("DELETE FROM {$g_table_prefix}field_setting_options WHERE setting_id IN ($setting_id_str)");
     mysql_query("DELETE FROM {$g_table_prefix}field_settings WHERE setting_id IN ($setting_id_str)");
+    mysql_query("DELETE FROM {$g_table_prefix}field_type_validation_rules WHERE field_type_id = $field_type_id");
+
+    // delete all uses of this field's validation
+    $form_fields_query = mysql_query("SELECT field_id FROM {$g_table_prefix}form_fields WHERE field_type_id = $field_type_id");
+    $field_ids = array();
+    while ($row = mysql_fetch_assoc($form_fields_query))
+    {
+    	$field_ids[] = $row["field_id"];
+    }
+    if (!empty($field_ids))
+    {
+    	$field_id_str = implode(",", $field_ids);
+      mysql_query("DELETE FROM {$g_table_prefix}field_validation WHERE field_id IN ($field_id_str)");
+    }
 
     $input_field_type_info = ft_get_field_type_by_identifier("textbox");
     $input_field_type_id = $input_field_type_info["field_type_id"];
@@ -113,9 +134,10 @@ function field_type_google_maps__upgrade($old_version, $new_version)
   $old_version_info = ft_get_version_info($old_version);
   $new_version_info = ft_get_version_info($new_version);
 
+  $google_maps_field_type_id = ft_get_field_type_id_by_identifier("google_maps_field");
+
   if ($old_version_info["release_date"] < 20110607)
   {
-    $google_maps_field_type_id = ft_get_field_type_id_by_identifier("google_maps_field");
     mysql_query("
       UPDATE {$g_table_prefix}field_types
       SET    resources_js = '\$(function() {\r\n  if (typeof google == \"undefined\") {\r\n    return; \r\n  }\r\n  var maps = {}; \r\n  var defaults = {\r\n    zoom: 3, \r\n    center: new google.maps.LatLng(42.258881, -100.195313),\r\n    mapTypeId: google.maps.MapTypeId.ROADMAP,\r\n    streetViewControl: false,\r\n    mapTypeControl: false\r\n  }\r\n      \r\n  // load any maps in the page, defaulted to whatever address was saved\r\n  \$(\".cf_gmf_section\").each(function() {\r\n    var gmf_id = \$(this).attr(\"id\");\r\n    var field_name = \$(this).find(\".cf_gmf_address\").attr(\"name\");\r\n    var data = \$(this).find(\".cf_gmf_data\").val();\r\n    var opts = defaults;\r\n    if (data != \"\") {\r\n      var parts = data.split(\"|\"); \r\n      var lat_lng = parts[1].split(\", \");\r\n      opts.zoom = parseInt(parts[2], 10);\r\n      opts.center = new google.maps.LatLng(parseFloat(lat_lng[0]), parseFloat(lat_lng[1]));\r\n    }\r\n    maps[gmf_id] = new google.maps.Map(\$(this).find(\".cf_gmf\")[0], opts);\r\n\r\n    google.maps.event.addListener(maps[gmf_id], ''zoom_changed'', function() {\r\n      \$(\"#\" + gmf_id).find(\"[name=\" + field_name + \"_zoom]\").val(maps[gmf_id].getZoom());\r\n    });\r\n  });\r\n\r\n  // out event handlers\r\n  \$(\".cf_gmf_update\").bind(\"click\", update_map);\r\n\r\n  function update_map(e) {\r\n    var gmf_div = \$(e.target).closest(\".cf_gmf_section\");\r\n    var field_name = gmf_div.find(\".cf_gmf_address\").attr(\"name\");\r\n    var map     = maps[gmf_div.attr(\"id\")];\r\n    var address = gmf_div.find(\".cf_gmf_address\").val();\r\n    var geocoder = new google.maps.Geocoder();\r\n    geocoder.geocode({ ''address'': address }, function(results, status) {\r\n      if (status == google.maps.GeocoderStatus.OK) {\r\n        var loc = results[0].geometry.location;\r\n        map.setCenter(loc);\r\n        var coords = loc.lat() + \", \" + loc.lng();\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_coords]\").val(coords);\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_zoom]\").val(map.getZoom());\r\n        \$(\".cf_gmf_coords_str\").html(coords);\r\n      }\r\n    });\r\n  }\r\n});'
@@ -156,6 +178,16 @@ function field_type_google_maps__upgrade($old_version, $new_version)
   if ($old_version_info["release_date"] < 20110820)
   {
     ft_register_hook("template", "field_type_google_maps", "standalone_head_bottom", "", "ftgp_include_standalone_google_maps", 50, true);
+  }
+
+  if ($old_version_info["release_date"] < 20111007)
+  {
+  	@mysql_query("
+  	  INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+  	    custom_function, custom_function_required, default_error_message, list_order)
+  	  VALUES ($google_maps_field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
+  	    '{\$LANG.validation_default_rule_required}', 1)
+  	");
   }
 }
 
