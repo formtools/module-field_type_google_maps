@@ -2,7 +2,7 @@
 
 function field_type_google_maps__install($module_id)
 {
-  global $g_table_prefix;
+  global $g_table_prefix, $LANG;
 
   // check it's not already installed (i.e. check for the unique field type identifier)
   $field_type_info = ft_get_field_type_by_identifier("google_maps_field");
@@ -38,7 +38,7 @@ function field_type_google_maps__install($module_id)
     VALUES ('no', 'This module may only be edited via the Google Maps Field module.', $module_id, 'Google Maps',
       'google_maps_field', $group_id, 'no', 'no', '', NULL, $next_list_order, 'large',
       '{strip}{assign var=address value=\"\"}\r\n{assign var=coords value=\"\"}\r\n{if \$VALUE}\r\n  {assign var=parts value=\"|\"|explode:\$VALUE}\r\n  {assign var=address value=\$parts[0]}\r\n  {assign var=coords value=\$parts[1]}\r\n\r\n  {if \$view_export == \"lat_lng\"}\r\n    {\$coords}\r\n  {else}\r\n    {\$address}\r\n  {/if}\r\n{/if}{/strip}\r\n\r\n', '{assign var=address value=\"\"}\r\n{assign var=coordinates value=\"\"}\r\n{assign var=zoom_level value=\"\"}\r\n{if \$VALUE}\r\n  {assign var=parts value=\"|\"|explode:\$VALUE}\r\n  {assign var=address value=\$parts[0]}\r\n  {assign var=coords value=\$parts[1]}\r\n  {assign var=zoom_level value=\$parts[2]}\r\n{/if}\r\n\r\n<div class=\"cf_gmf_section\" id=\"cf_gmf_{\$NAME}\">\r\n  <input type=\"hidden\" class=\"cf_gmf_data\" value=\"{\$VALUE|escape}\" />\r\n  <table cellspacing=\"0\" cellpadding=\"0\" width=\"100%\">\r\n  <tr>\r\n    <td><input type=\"text\" name=\"{\$NAME}\" class=\"cf_gmf_address\" \r\n      placeholder=\"Enter Address\" value=\"{\$address|escape}\" /></td>\r\n    <td width=\"60\"><input type=\"button\" class=\"cf_gmf_update\" value=\"{\$LANG.word_update}\" /></td>\r\n  </tr>\r\n  </table>\r\n\r\n  <div id=\"cf_gmf_{\$NAME}_map\" class=\"cf_gmf {\$map_size}\"></div>\r\n  <input type=\"hidden\" name=\"{\$NAME}_coords\" value=\"{\$coords}\" />\r\n  <input type=\"hidden\" name=\"{\$NAME}_zoom\" value=\"{\$zoom_level}\" />\r\n \r\n  {if \$show_coordinates == \"yes\"}\r\n    <div class=\"medium_grey cf_gmf_coords_str\">{\$coords|default:\"&#8212;\"}</div>\r\n  {/if}\r\n  {if \$comments}\r\n    <div class=\"cf_field_comments\">{\$comments}</div>\r\n  {/if}\r\n</div>\r\n\r\n', '\$field_name = \$vars[\"field_info\"][\"field_name\"];\r\n\r\n\$value = \"\";\r\nif (!empty(\$vars[\"data\"][\$field_name])) {\r\n  \$address = \$vars[\"data\"][\$field_name];\r\n  \$coords  = \$vars[\"data\"][\"{\$field_name}_coords\"];\r\n  \$zoom    = \$vars[\"data\"][\"{\$field_name}_zoom\"];\r\n  \$value   = \"\$address|\$coords|\$zoom\";\r\n}\r\n', '.cf_gmf_address {\r\n  width: 98%;\r\n}\r\n.cf_gmf_tiny {\r\n  height: 160px; \r\n}\r\n.cf_gmf_small {\r\n  height: 250px; \r\n}\r\n.cf_gmf_medium {\r\n  height: 350px; \r\n}\r\n.cf_gmf_large {\r\n  height: 590px; \r\n}\r\n',
-      '\$(function() {\r\n  var maps = {}; \r\n  var defaults = {\r\n    zoom: 3, \r\n    center: new google.maps.LatLng(42.258881, -100.195313),\r\n    mapTypeId: google.maps.MapTypeId.ROADMAP,\r\n    streetViewControl: false,\r\n    mapTypeControl: false\r\n  }\r\n      \r\n  // load any maps in the page, defaulted to whatever address was saved\r\n  \$(\".cf_gmf_section\").each(function() {\r\n    var gmf_id = \$(this).attr(\"id\");\r\n    var field_name = \$(this).find(\".cf_gmf_address\").attr(\"name\");\r\n    var data = \$(this).find(\".cf_gmf_data\").val();\r\n    var opts = defaults;\r\n    if (data != \"\") {\r\n      var parts = data.split(\"|\"); \r\n      var lat_lng = parts[1].split(\", \");\r\n      opts.zoom = parseInt(parts[2], 10);\r\n      opts.center = new google.maps.LatLng(parseFloat(lat_lng[0]), parseFloat(lat_lng[1]));\r\n    }\r\n    maps[gmf_id] = new google.maps.Map(\$(this).find(\".cf_gmf\")[0], opts);\r\n\r\n    google.maps.event.addListener(maps[gmf_id], ''zoom_changed'', function() {\r\n      \$(\"#\" + gmf_id).find(\"[name=\" + field_name + \"_zoom]\").val(maps[gmf_id].getZoom());\r\n    });\r\n  });\r\n\r\n  // out event handlers\r\n  \$(\".cf_gmf_update\").bind(\"click\", update_map);\r\n\r\n  function update_map(e) {\r\n    var gmf_div = \$(e.target).closest(\".cf_gmf_section\");\r\n    var field_name = gmf_div.find(\".cf_gmf_address\").attr(\"name\");\r\n    var map     = maps[gmf_div.attr(\"id\")];\r\n    var address = gmf_div.find(\".cf_gmf_address\").val();\r\n    var geocoder = new google.maps.Geocoder();\r\n    geocoder.geocode({ ''address'': address }, function(results, status) {\r\n      if (status == google.maps.GeocoderStatus.OK) {\r\n        var loc = results[0].geometry.location;\r\n        map.setCenter(loc);\r\n        var coords = loc.lat() + \", \" + loc.lng();\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_coords]\").val(coords);\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_zoom]\").val(map.getZoom());\r\n        \$(\".cf_gmf_coords_str\").html(coords);\r\n      }\r\n    });\r\n  }\r\n});')
+      '\$(function() {\r\n  if (typeof google == \"undefined\") {\r\n    return; \r\n  }\r\n  var maps = {}; \r\n  var defaults = {\r\n    zoom: 3, \r\n    center: new google.maps.LatLng(42.258881, -100.195313),\r\n    mapTypeId: google.maps.MapTypeId.ROADMAP,\r\n    streetViewControl: false,\r\n    mapTypeControl: false\r\n  }\r\n      \r\n  // load any maps in the page, defaulted to whatever address was saved\r\n  \$(\".cf_gmf_section\").each(function() {\r\n    var gmf_id = \$(this).attr(\"id\");\r\n    var field_name = \$(this).find(\".cf_gmf_address\").attr(\"name\");\r\n    var data = \$(this).find(\".cf_gmf_data\").val();\r\n    var opts = defaults;\r\n    if (data != \"\") {\r\n      var parts = data.split(\"|\"); \r\n      var lat_lng = parts[1].split(\", \");\r\n      opts.zoom = parseInt(parts[2], 10);\r\n      opts.center = new google.maps.LatLng(parseFloat(lat_lng[0]), parseFloat(lat_lng[1]));\r\n    }\r\n    maps[gmf_id] = new google.maps.Map(\$(this).find(\".cf_gmf\")[0], opts);\r\n\r\n    google.maps.event.addListener(maps[gmf_id], ''zoom_changed'', function() {\r\n      \$(\"#\" + gmf_id).find(\"[name=\" + field_name + \"_zoom]\").val(maps[gmf_id].getZoom());\r\n    });\r\n  });\r\n\r\n  // out event handlers\r\n  \$(\".cf_gmf_update\").bind(\"click\", update_map);\r\n\r\n  function update_map(e) {\r\n    var gmf_div = \$(e.target).closest(\".cf_gmf_section\");\r\n    var field_name = gmf_div.find(\".cf_gmf_address\").attr(\"name\");\r\n    var map     = maps[gmf_div.attr(\"id\")];\r\n    var address = gmf_div.find(\".cf_gmf_address\").val();\r\n    var geocoder = new google.maps.Geocoder();\r\n    geocoder.geocode({ ''address'': address }, function(results, status) {\r\n      if (status == google.maps.GeocoderStatus.OK) {\r\n        var loc = results[0].geometry.location;\r\n        map.setCenter(loc);\r\n        var coords = loc.lat() + \", \" + loc.lng();\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_coords]\").val(coords);\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_zoom]\").val(map.getZoom());\r\n        \$(\".cf_gmf_coords_str\").html(coords);\r\n      }\r\n    });\r\n  }\r\n});')
   ");
   $field_type_id = mysql_insert_id();
 
@@ -64,6 +64,10 @@ function field_type_google_maps__install($module_id)
 
   // comments
   mysql_query("INSERT INTO {$g_table_prefix}field_type_settings (field_type_id, field_label, field_setting_identifier, field_type, field_orientation, default_value_type, default_value, list_order) VALUES ($field_type_id, 'Field Comments', 'comments', 'textarea', 'na', 'static', '', 4)");
+
+
+  // lastly, add our hook to include the Google Maps library
+  ft_register_hook("template", "field_type_google_maps", "head_bottom", "", "ftgp_include_google_maps");
 
   return array(true, "");
 }
@@ -99,3 +103,49 @@ function field_type_google_maps__uninstall($module_id)
   return array(true, "");
 }
 
+
+function field_type_google_maps__upgrade($old_version, $new_version)
+{
+  global $g_table_prefix;
+
+  $old_version_info = ft_get_version_info($old_version);
+  $new_version_info = ft_get_version_info($new_version);
+
+  if ($old_version_info["release_date"] < 20110607)
+  {
+    $google_maps_field_type_id = ft_get_field_type_id_by_identifier("google_maps_field");
+  	mysql_query("
+  	  UPDATE {$g_table_prefix}field_types
+  	  SET    resources_js = '\$(function() {\r\n  if (typeof google == \"undefined\") {\r\n    return; \r\n  }\r\n  var maps = {}; \r\n  var defaults = {\r\n    zoom: 3, \r\n    center: new google.maps.LatLng(42.258881, -100.195313),\r\n    mapTypeId: google.maps.MapTypeId.ROADMAP,\r\n    streetViewControl: false,\r\n    mapTypeControl: false\r\n  }\r\n      \r\n  // load any maps in the page, defaulted to whatever address was saved\r\n  \$(\".cf_gmf_section\").each(function() {\r\n    var gmf_id = \$(this).attr(\"id\");\r\n    var field_name = \$(this).find(\".cf_gmf_address\").attr(\"name\");\r\n    var data = \$(this).find(\".cf_gmf_data\").val();\r\n    var opts = defaults;\r\n    if (data != \"\") {\r\n      var parts = data.split(\"|\"); \r\n      var lat_lng = parts[1].split(\", \");\r\n      opts.zoom = parseInt(parts[2], 10);\r\n      opts.center = new google.maps.LatLng(parseFloat(lat_lng[0]), parseFloat(lat_lng[1]));\r\n    }\r\n    maps[gmf_id] = new google.maps.Map(\$(this).find(\".cf_gmf\")[0], opts);\r\n\r\n    google.maps.event.addListener(maps[gmf_id], ''zoom_changed'', function() {\r\n      \$(\"#\" + gmf_id).find(\"[name=\" + field_name + \"_zoom]\").val(maps[gmf_id].getZoom());\r\n    });\r\n  });\r\n\r\n  // out event handlers\r\n  \$(\".cf_gmf_update\").bind(\"click\", update_map);\r\n\r\n  function update_map(e) {\r\n    var gmf_div = \$(e.target).closest(\".cf_gmf_section\");\r\n    var field_name = gmf_div.find(\".cf_gmf_address\").attr(\"name\");\r\n    var map     = maps[gmf_div.attr(\"id\")];\r\n    var address = gmf_div.find(\".cf_gmf_address\").val();\r\n    var geocoder = new google.maps.Geocoder();\r\n    geocoder.geocode({ ''address'': address }, function(results, status) {\r\n      if (status == google.maps.GeocoderStatus.OK) {\r\n        var loc = results[0].geometry.location;\r\n        map.setCenter(loc);\r\n        var coords = loc.lat() + \", \" + loc.lng();\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_coords]\").val(coords);\r\n        \$(gmf_div).find(\"[name=\" + field_name + \"_zoom]\").val(map.getZoom());\r\n        \$(\".cf_gmf_coords_str\").html(coords);\r\n      }\r\n    });\r\n  }\r\n});'
+  	  WHERE  field_type_id = $google_maps_field_type_id
+  	");
+  }
+}
+
+function ftgp_include_google_maps($template, $page_data)
+{
+  global $g_root_url;
+
+  // we only need this field on the edit pages
+  $curr_page = $page_data["page"];
+  if ($curr_page != "admin_edit_submission" && $curr_page != "client_edit_submission")
+    return;
+
+  $google_maps_field_type_id = ft_get_field_type_id_by_identifier("google_maps_field");
+
+  // see if the page contains one or more Google Maps fields
+  $page_field_types = (isset($page_data["field_types"])) ? $page_data["field_types"] : array();
+
+  $has_google_map_field = false;
+  foreach ($page_field_types as $field_type_info)
+  {
+    if ($field_type_info["field_type_id"] == $google_maps_field_type_id)
+    {
+      $has_google_map_field = true;
+      break;
+    }
+  }
+
+  if ($has_google_map_field)
+    echo "<script src=\"http://maps.google.com/maps/api/js?sensor=false\"></script>\n";
+}
