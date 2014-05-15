@@ -109,11 +109,11 @@ function field_type_google_maps__uninstall($module_id)
     $field_ids = array();
     while ($row = mysql_fetch_assoc($form_fields_query))
     {
-    	$field_ids[] = $row["field_id"];
+      $field_ids[] = $row["field_id"];
     }
     if (!empty($field_ids))
     {
-    	$field_id_str = implode(",", $field_ids);
+      $field_id_str = implode(",", $field_ids);
       mysql_query("DELETE FROM {$g_table_prefix}field_validation WHERE field_id IN ($field_id_str)");
     }
 
@@ -174,12 +174,12 @@ function field_type_google_maps__update($old_version_info, $new_version_info)
   }
   if ($old_version_date < 20111007)
   {
-  	@mysql_query("
-  	  INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
-  	    custom_function, custom_function_required, default_error_message, list_order)
-  	  VALUES ($google_maps_field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
-  	    '{\$LANG.validation_default_rule_required}', 1)
-  	");
+    @mysql_query("
+      INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+        custom_function, custom_function_required, default_error_message, list_order)
+      VALUES ($google_maps_field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
+        '{\$LANG.validation_default_rule_required}', 1)
+    ");
   }
 
   ftgp_reset_hooks();
@@ -243,12 +243,12 @@ function field_type_google_maps__upgrade($old_version, $new_version)
 
   if ($old_version_info["release_date"] < 20111007)
   {
-  	@mysql_query("
-  	  INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
-  	    custom_function, custom_function_required, default_error_message, list_order)
-  	  VALUES ($google_maps_field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
-  	    '{\$LANG.validation_default_rule_required}', 1)
-  	");
+    @mysql_query("
+      INSERT INTO {$g_table_prefix}field_type_validation_rules (field_type_id, rsv_rule, rule_label, rsv_field_name,
+        custom_function, custom_function_required, default_error_message, list_order)
+      VALUES ($google_maps_field_type_id, 'required', '{\$LANG.word_required}', '{\$field_name}', '', 'na',
+        '{\$LANG.validation_default_rule_required}', 1)
+    ");
   }
 }
 
@@ -291,11 +291,11 @@ function ftgp_include_google_maps($template, $page_data)
  */
 function ftgp_include_standalone_google_maps($template, $page_data)
 {
-	$string = "<script src=\"http://maps.google.com/maps/api/js?sensor=false\"></script>\n";
+  $string = "<script src=\"http://maps.google.com/maps/api/js?sensor=false\"></script>\n";
 
-	// this function can either return or just echo the code directly. The Form Builder needs it returned,
-	// as the template hook is called via code to keep the actual templates entered by the administrator's as simple
-	// as possible
+  // this function can either return or just echo the code directly. The Form Builder needs it returned,
+  // as the template hook is called via code to keep the actual templates entered by the administrator's as simple
+  // as possible
   if (isset($form_tools_all_template_hook_params["return"]))
     return $string;
   else
@@ -305,8 +305,7 @@ function ftgp_include_standalone_google_maps($template, $page_data)
 
 function ftgp_reset_hooks()
 {
-	ft_unregister_hooks("field_type_google_maps");
-
+  ft_unregister_module_hooks("field_type_google_maps");
   ft_register_hook("template", "field_type_google_maps", "head_bottom", "", "ftgp_include_google_maps");
   ft_register_hook("template", "field_type_google_maps", "standalone_form_fields_head_bottom", "", "ftgp_include_standalone_google_maps");
 }
