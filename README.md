@@ -12,5 +12,5 @@ So no working locally without internet!
 
 ### Form Tools Extensions
 
-For further information about Form Tools modules, check out:
-[https://modules.formtools.org](https://modules.formtools.org)
+For a full list of Form Tools modules, see: 
+[https://modules.formtools.org/](https://modules.formtools.org/)

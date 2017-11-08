@@ -18,8 +18,8 @@ class Module extends FormToolsModule
     protected $author = "Ben Keen";
     protected $authorEmail = "ben.keen@gmail.com";
     protected $authorLink = "http://formtools.org";
-    protected $version = "2.0.0";
-    protected $date = "2017-09-30";
+    protected $version = "2.0.1";
+    protected $date = "2017-11-07";
     protected $originLanguage = "en_us";
 
     protected $nav = array(
