@@ -18,8 +18,8 @@ class Module extends FormToolsModule
     protected $author = "Ben Keen";
     protected $authorEmail = "ben.keen@gmail.com";
     protected $authorLink = "http://formtools.org";
-    protected $version = "2.0.1";
-    protected $date = "2017-11-07";
+    protected $version = "2.0.2";
+    protected $date = "2017-11-26";
     protected $originLanguage = "en_us";
 
     protected $nav = array(
@@ -333,12 +333,13 @@ END;
      */
     public function includeStandaloneGoogleMaps($template, $page_data)
     {
-        $settings = Modules::getModuleSettings();
-        if (!isset($settings["google_maps_key"]) || empty($settings["google_maps_key"])) {
+        $google_maps_key = Modules::getModuleSettings("google_maps_key", "field_type_google_maps");
+
+        if (empty($google_maps_key)) {
             return "";
         }
 
-        $string = "<script async defer id=\"google-maps-field-lib\" src=\"https://maps.googleapis.com/maps/api/js?key={$settings["google_maps_key"]}&callback=googleMapsInit\"></script>\n";
+        $string = "<script async defer id=\"google-maps-field-lib\" src=\"https://maps.googleapis.com/maps/api/js?key={$google_maps_key}&callback=googleMapsInit\"></script>\n";
 
         // this function can either return or just echo the code directly. The Form Builder needs it returned,
         // as the template hook is called via code to keep the actual templates entered by the administrator's as simple
