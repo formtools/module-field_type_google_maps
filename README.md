@@ -8,9 +8,12 @@ So no working locally without internet!
 
 ### Documentation
 
-[https://docs.formtools.org/modules/field_type_google_maps/](https://docs.formtools.org/modules/field_type_google_maps/)
+- [https://docs.formtools.org/modules/field_type_google_maps/](https://docs.formtools.org/modules/field_type_google_maps/)
 
-### Form Tools Extensions
 
-For a full list of Form Tools modules, see: 
-[https://modules.formtools.org/](https://modules.formtools.org/)
+### Other Links
+
+- [Available Form Tools modules](https://modules.formtools.org/)
+- [About Form Tools modules](https://docs.formtools.org/userdoc/modules/) 
+- [Installation instructions](https://docs.formtools.org/userdoc/modules/installing/)
+- [Upgrading](https://docs.formtools.org/userdoc/modules/upgrading/)
