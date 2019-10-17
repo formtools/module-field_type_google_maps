@@ -18,8 +18,8 @@ class Module extends FormToolsModule
     protected $author = "Ben Keen";
     protected $authorEmail = "ben.keen@gmail.com";
     protected $authorLink = "http://formtools.org";
-    protected $version = "2.0.2";
-    protected $date = "2017-11-26";
+    protected $version = "2.1.0";
+    protected $date = "2019-10-16";
     protected $originLanguage = "en_us";
 
     protected $nav = array(
@@ -30,6 +30,7 @@ class Module extends FormToolsModule
     {
         $db = Core::$db;
         $LANG = Core::$L;
+        $root_url = Core::getRootUrl();
 
         // check it's not already installed (i.e. check for the unique field type identifier)
         $field_type_info = FieldTypes::getFieldTypeByIdentifier("google_maps_field");
@@ -70,6 +71,69 @@ window.googleMapsInit = function () {
     mapTypeControl: false
   };
 
+  function addYourLocationButton(map) {
+    var controlDiv = document.createElement('div');
+    
+    var defaultIconOpacity = 0.6;
+
+    var bg = document.createElement('button');
+    bg.style.backgroundColor = '#fff';
+    bg.style.border = 'none';
+    bg.style.outline = 'none';
+    bg.style.width = '40px';
+    bg.style.height = '40px';
+    bg.style.borderRadius = '2px';
+    bg.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
+    bg.style.cursor = 'pointer';
+    bg.style.marginRight = '10px';
+    bg.style.padding = '0';
+    bg.title = 'Your Location';
+    controlDiv.appendChild(bg);
+
+    var icon = document.createElement('div');
+    icon.style.margin = '7px';
+    icon.style.width = '26px';
+    icon.style.height = '26px';
+    icon.style.backgroundImage = 'url($root_url/modules/field_type_google_maps/images/location.png)';
+    icon.style.backgroundSize = '26px 26px';
+    icon.style.backgroundPosition = '0 0';
+    icon.style.backgroundRepeat = 'no-repeat';
+    icon.style.opacity = defaultIconOpacity;
+    bg.appendChild(icon);
+
+    google.maps.event.addListener(map, 'center_changed', function () {
+        icon.style.opacity = defaultIconOpacity;
+    });
+
+    bg.addEventListener('click', function (e) {
+    	e.preventDefault();
+        var currOpacity = 0,
+            animationInterval = setInterval(function () {
+                currOpacity = currOpacity === defaultIconOpacity ? 0.3 : defaultIconOpacity;
+                icon.style.opacity = currOpacity;
+            }, 500);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var latlng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                map.setCenter(latlng);
+                map.setZoom(8);
+                clearInterval(animationInterval);
+                icon.style.opacity = defaultIconOpacity;
+            }, function () {
+                clearInterval(animationInterval);
+                icon.style.opacity = defaultIconOpacity;
+            }, { timeout: 60000 });
+        } else {
+            clearInterval(animationInterval);
+            icon.style.opacity = defaultIconOpacity;
+        }
+    });
+
+    controlDiv.index = 1;
+    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(controlDiv);
+  }
+
   var initMap = function () {
     var gmf_id = $(this).attr("id");
     var address_field = $(this).find(".cf_gmf_address");
@@ -99,6 +163,10 @@ window.googleMapsInit = function () {
     google.maps.event.addListener(maps[gmf_id].map, 'zoom_changed', function (e) {
       $("#" + gmf_id).find("[name=" + field_name + "_zoom]").val(maps[gmf_id].map.getZoom());
     });
+    
+    if (location.protocol === 'https:') {
+      addYourLocationButton(maps[gmf_id].map);
+    }
   };
 
   // googleMapsInit may fire before or after DOM ready
